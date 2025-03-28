@@ -74,15 +74,15 @@ private:
 };
 
 int main(){
+
+/// Ladowanie przykladowego grafu z macierzy sasiedztwa ujemna wartosc oznacza brak krawedzi
     std::ifstream testMatrix("example_matrix");
     int m,n;
 
     testMatrix >> m >> n;
-
     assertm(m==n, "m must be equal to n (square matrix)");
 
     Matrix matrix(m,n);
-
     for (int i=0; i<n; i++){
         for (int j=0; j<m; j++){
             double num;
@@ -93,8 +93,10 @@ int main(){
 
     Graph graph(m, matrix);
 
-    std::set<int> unassignedNodes;
-    std::set<int> assignedNodes;
+///Inicjowanie zmiennych do algorytmu Prima
+
+    std::set<int> unassignedNodes; //wierzochlki poza drzewem
+    std::set<int> assignedNodes; //wierzcholki bedace w drzewie
     for(int i = 0; i<m; i++) unassignedNodes.insert(i);
 
     assignedNodes.insert(unassignedNodes.extract(0));
@@ -104,18 +106,24 @@ int main(){
 
     Graph spanning_tree(m);
 
+
+///Algorytm Prima: wykonuje sie dopoki sa wierzcholki ktore nie sa w drzewie
     while(!unassignedNodes.empty()){
+        ///znalezienie wszystkich wierzcholkow polaczonych z nowo dodanym wierzcholkiem
         std::vector<std::pair<int, double>> new_neighbors = graph.getNeighbors(lastInsert);
+        ///petla for sprawdza ktore z tych wierzcholkow nie sa juz dodane i krawedzie je laczoce sa lepsze(min) niz te znalezione poprzednio
         for(auto &&new_neighbor : new_neighbors){
             if(assignedNodes.count(new_neighbor.first)) continue;
             auto registered_edge = possible_edges.find(new_neighbor.first);
             if(registered_edge == possible_edges.end() || registered_edge->second.second > new_neighbor.second)
                 possible_edges.insert_or_assign(new_neighbor.first,std::make_pair(lastInsert, new_neighbor.second));
         }
+        ///z posrod wszystkich mozliwych nowych przylaczen wybieramy takie o najmniejszej wadze
         auto minEdge = std::min_element(possible_edges.begin(), possible_edges.end(),
                                         [](decltype(possible_edges)::value_type& l, decltype(possible_edges)::value_type& r){
                                             return l.second.second < r.second.second;
                                         });
+        ///po znalenieniu dodajemy je do drzewa
         lastInsert = minEdge->first;
         possible_edges.erase(lastInsert);
         assignedNodes.insert(unassignedNodes.extract(lastInsert));
@@ -129,6 +137,8 @@ int main(){
         // break;
     }
 
+
+    ///wypisanie polaczen w drzewie
     for(int i{}; i<m; i++)
     {
         auto neigh = spanning_tree.getNeighbors(i);
